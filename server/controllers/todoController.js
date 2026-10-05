@@ -3,7 +3,7 @@ const Todo = require("../models/Todo");
 // GET /api/todos
 const getTodos = async (req, res) => {
   try {
-    const todos = await Todo.find().sort({ createdAt: -1 });
+    const todos = await Todo.find({ owner: req.user._id }).sort({ createdAt: -1 });
     res.status(200).json(todos);
   } catch (err) {
     console.error(err);
@@ -18,7 +18,7 @@ const createTodo = async (req, res) => {
     if (!title) {
       return res.status(400).json({ message: "Title is required" });
     }
-    const todo = await Todo.create({ title });
+    const todo = await Todo.create({ title, owner: req.user._id });
     res.status(201).json(todo);
   } catch (err) {
     console.error(err);
@@ -49,7 +49,7 @@ const updateTodo = async (req, res) => {
       return res.status(400).json({ message: "Only title and completed can be updated" });
     }
 
-    const todo = await Todo.findByIdAndUpdate(req.params.id, req.body, {
+    const todo = await Todo.findOneAndUpdate({ _id: req.params.id, owner: req.user._id }, updates, {
       new: true,
       runValidators: true,
     });
@@ -66,7 +66,7 @@ const updateTodo = async (req, res) => {
 // DELETE /api/todos/:id
 const deleteTodo = async (req, res) => {
   try {
-    const todo = await Todo.findByIdAndDelete(req.params.id);
+    const todo = await Todo.findOneAndDelete({ _id: req.params.id, owner: req.user._id });
     if (!todo) {
       return res.status(404).json({ message: "Todo not found" });
     }

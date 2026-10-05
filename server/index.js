@@ -3,25 +3,25 @@ require("dotenv").config({ path: path.join(__dirname, ".env") });
 const express = require("express");
 const mongoose = require("mongoose");
 const todoRoutes = require("./routes/todoRoutes");
+const authRoutes = require("./routes/authRoutes");
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json());
 
-// Log every API request: method, url, status, time taken, and body for writes
+// Log request metadata only; request bodies can contain passwords.
 app.use("/api", (req, res, next) => {
   const start = Date.now();
   res.on("finish", () => {
-    const body = ["POST", "PUT"].includes(req.method)
-      ? ` ${JSON.stringify(req.body)}`
-      : "";
     console.log(
-      `${req.method} ${req.originalUrl} ${res.statusCode} ${Date.now() - start}ms${body}`
+      `${req.method} ${req.originalUrl} ${res.statusCode} ${Date.now() - start}ms`
     );
   });
   next();
 });
 
 // API routes
+app.use("/api/auth", authRoutes);
 app.use("/api/todos", todoRoutes);
 
 // Serve the React build (used in production)

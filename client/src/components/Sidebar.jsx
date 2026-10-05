@@ -22,7 +22,7 @@ function ProgressRing({ percent }) {
   );
 }
 
-function Sidebar({ todos, filter, onFilter, onClearDone }) {
+function Sidebar({ todos, user, filter, onFilter, onClearDone, onLogout }) {
   const doneCount = todos.filter(FILTERS.done.test).length;
   const percent = todos.length ? (doneCount / todos.length) * 100 : 0;
   const today = new Date().toLocaleDateString(undefined, {
@@ -51,6 +51,11 @@ function Sidebar({ todos, filter, onFilter, onClearDone }) {
               : `${doneCount} of ${todos.length} tasks done`}
           </p>
         </div>
+      </div>
+
+      <div className="account-row">
+        <span title={user.email}>{user.email}</span>
+        <button type="button" onClick={onLogout}>Sign out</button>
       </div>
 
       <nav className="filters">

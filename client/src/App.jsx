@@ -1,13 +1,26 @@
 import { useEffect, useState } from "react";
-import { getTodos, createTodo, updateTodo, deleteTodo } from "./api";
+import {
+  getCurrentUser,
+  getTodos,
+  createTodo,
+  updateTodo,
+  deleteTodo,
+  logout,
+} from "./api";
 import { FILTERS } from "./filters";
 import Sidebar from "./components/Sidebar";
 import TodoForm from "./components/TodoForm";
 import TodoItem from "./components/TodoItem";
+import AuthPage from "./components/AuthPage";
 
 function App() {
+  const PAGE_SIZE = 10;
   const [todos, setTodos] = useState([]);
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -23,15 +36,50 @@ function App() {
   };
 
   useEffect(() => {
-    run(async () => setTodos(await getTodos())).finally(() =>
-      setLoading(false)
-    );
+    let active = true;
+    getCurrentUser()
+      .then((currentUser) => {
+        if (active) setUser(currentUser);
+      })
+      .catch((err) => {
+        if (active) setError(err.message);
+      })
+      .finally(() => {
+        if (active) setAuthLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setTodos([]);
+      setLoading(false);
+      return;
+    }
+    let active = true;
+    setLoading(true);
+    getTodos()
+      .then((items) => {
+        if (active) setTodos(items);
+      })
+      .catch((err) => {
+        if (active) setError(err.message);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   const handleAdd = (title) =>
     run(async () => {
       const newTodo = await createTodo(title);
       setTodos((prev) => [newTodo, ...prev]);
+      setCurrentPage(1);
     });
 
   const handleUpdate = (id, data) =>
@@ -53,14 +101,51 @@ function App() {
       setTodos((prev) => prev.filter((t) => !t.completed));
     });
 
-  const filteredTodos = todos.filter(FILTERS[filter].test);
+  const handleLogout = () =>
+    run(async () => {
+      await logout();
+      setUser(null);
+      setTodos([]);
+      setError("");
+    });
+
+  const filteredTodos = todos
+    .filter(FILTERS[filter].test)
+    .filter((todo) => todo.title.toLowerCase().includes(searchQuery.trim().toLowerCase()));
+  const pageCount = Math.ceil(filteredTodos.length / PAGE_SIZE);
+  const visiblePage = Math.min(currentPage, Math.max(pageCount, 1));
+  const pageTodos = filteredTodos.slice(
+    (visiblePage - 1) * PAGE_SIZE,
+    visiblePage * PAGE_SIZE
+  );
+  const firstVisibleTask = filteredTodos.length
+    ? (visiblePage - 1) * PAGE_SIZE + 1
+    : 0;
+  const lastVisibleTask = Math.min(visiblePage * PAGE_SIZE, filteredTodos.length);
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, Math.max(pageCount, 1)));
+  }, [pageCount]);
+
+  if (authLoading) {
+    return <main className="auth-shell"><p className="auth-loading">Loading account...</p></main>;
+  }
+
+  if (!user) {
+    return <AuthPage onAuthenticated={(currentUser) => { setError(""); setUser(currentUser); }} error={error} />;
+  }
 
   return (
     <div className="layout">
       <Sidebar
         todos={todos}
+        user={user}
+        onLogout={handleLogout}
         filter={filter}
-        onFilter={setFilter}
+        onFilter={(nextFilter) => {
+          setFilter(nextFilter);
+          setCurrentPage(1);
+        }}
         onClearDone={handleClearDone}
       />
 
@@ -73,6 +158,25 @@ function App() {
         </header>
 
         <TodoForm onAdd={handleAdd} />
+
+        <label className="todo-search">
+          <span className="search-icon" aria-hidden="true">⌕</span>
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(event) => {
+              setSearchQuery(event.target.value);
+              setCurrentPage(1);
+            }}
+            placeholder="Search tasks..."
+            aria-label="Search tasks"
+          />
+          {searchQuery && (
+            <button type="button" onClick={() => setSearchQuery("")} aria-label="Clear search">
+              ×
+            </button>
+          )}
+        </label>
 
         {error && (
           <div className="error" role="alert">
@@ -89,14 +193,16 @@ function App() {
           <div className="empty">
             <img src="/logo.png" alt="" />
             <p>
-              {filter === "done"
+              {searchQuery.trim()
+                ? "No tasks match your search."
+                : filter === "done"
                 ? "Nothing completed yet"
                 : "You're all caught up. Add a task above."}
             </p>
           </div>
         ) : (
           <ul className="todo-list">
-            {filteredTodos.map((todo) => (
+            {pageTodos.map((todo) => (
               <TodoItem
                 key={todo._id}
                 todo={todo}
@@ -105,6 +211,31 @@ function App() {
               />
             ))}
           </ul>
+        )}
+
+        {!loading && filteredTodos.length > 0 && pageCount > 1 && (
+          <nav className="pagination" aria-label="Task pages">
+            <span className="pagination-summary">
+              Showing {firstVisibleTask}–{lastVisibleTask} of {filteredTodos.length}
+            </span>
+            <div className="pagination-controls">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+                disabled={visiblePage === 1}
+              >
+                Previous
+              </button>
+              <span aria-live="polite">Page {visiblePage} of {pageCount}</span>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((page) => Math.min(page + 1, pageCount))}
+                disabled={visiblePage === pageCount}
+              >
+                Next
+              </button>
+            </div>
+          </nav>
         )}
       </main>
     </div>
