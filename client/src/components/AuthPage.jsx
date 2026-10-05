@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { login, register } from "../api";
+import ThemeToggle from "./ThemeToggle";
 
-function AuthPage({ onAuthenticated, error: initialError }) {
+function AuthPage({ onAuthenticated, error: initialError, theme, onToggleTheme }) {
   const [isRegistering, setIsRegistering] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -76,6 +77,7 @@ function AuthPage({ onAuthenticated, error: initialError }) {
             {isRegistering ? "Sign in" : "Create an account"}
           </button>
         </p>
+        <ThemeToggle theme={theme} onToggle={onToggleTheme} className="auth-theme-toggle" />
       </section>
     </main>
   );

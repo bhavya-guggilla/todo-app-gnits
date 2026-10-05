@@ -16,23 +16,21 @@
   --brand-gradient: linear-gradient(90deg, #3b6fd4, #2e9e6e, #d6268f);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: linear-gradient(135deg, #0f172a, #1e1b2e);
-    --panel: #1e2130;
-    --text: #e5e7eb;
-    --muted: #9ca3af;
-    --faint: #6b7280;
-    --border: #2f3445;
-    --surface: #2a2e3f;
-    --hover: #252a3a;
-    --primary: #6366f1;
-    --primary-hover: #818cf8;
-    --primary-soft: #2a2c4a;
-    --danger: #f87171;
-    --danger-bg: #3b1d24;
-    --shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-  }
+:root[data-theme="dark"] {
+  --bg: linear-gradient(135deg, #0f172a, #1e1b2e);
+  --panel: #1e2130;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --faint: #6b7280;
+  --border: #2f3445;
+  --surface: #2a2e3f;
+  --hover: #252a3a;
+  --primary: #6366f1;
+  --primary-hover: #818cf8;
+  --primary-soft: #2a2c4a;
+  --danger: #f87171;
+  --danger-bg: #3b1d24;
+  --shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
 
 * {
@@ -178,6 +176,25 @@ button {
   color: var(--muted);
 }
 
+.theme-toggle {
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.theme-toggle:hover {
+  background: var(--hover);
+  border-color: var(--primary);
+}
+
+.auth-theme-toggle {
+  margin-top: 22px;
+}
+
 /* Sidebar */
 .sidebar {
   display: flex;
@@ -257,6 +274,10 @@ h1 {
   flex-shrink: 0;
   color: var(--primary);
   font-weight: 600;
+}
+
+.sidebar-theme-toggle {
+  align-self: flex-start;
 }
 
 /* Progress ring */

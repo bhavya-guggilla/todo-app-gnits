@@ -13,16 +13,38 @@ import TodoForm from "./components/TodoForm";
 import TodoItem from "./components/TodoItem";
 import AuthPage from "./components/AuthPage";
 
+const getInitialTheme = () => {
+  try {
+    const savedTheme = localStorage.getItem("todo-theme");
+    if (savedTheme === "light" || savedTheme === "dark") return savedTheme;
+  } catch {
+    // Fall back to the system preference when browser storage is unavailable.
+  }
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+};
+
 function App() {
   const PAGE_SIZE = 10;
   const [todos, setTodos] = useState([]);
   const [user, setUser] = useState(null);
+  const [theme, setTheme] = useState(getInitialTheme);
   const [authLoading, setAuthLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try {
+      localStorage.setItem("todo-theme", theme);
+    } catch {
+      // The theme still applies for this session if browser storage is unavailable.
+    }
+  }, [theme]);
+
+  const toggleTheme = () => setTheme((current) => current === "dark" ? "light" : "dark");
 
   // Runs an API action and shows its error in the banner if it fails
   const run = async (action) => {
@@ -132,7 +154,12 @@ function App() {
   }
 
   if (!user) {
-    return <AuthPage onAuthenticated={(currentUser) => { setError(""); setUser(currentUser); }} error={error} />;
+    return <AuthPage
+      onAuthenticated={(currentUser) => { setError(""); setUser(currentUser); }}
+      error={error}
+      theme={theme}
+      onToggleTheme={toggleTheme}
+    />;
   }
 
   return (
@@ -140,6 +167,8 @@ function App() {
       <Sidebar
         todos={todos}
         user={user}
+        theme={theme}
+        onToggleTheme={toggleTheme}
         onLogout={handleLogout}
         filter={filter}
         onFilter={(nextFilter) => {

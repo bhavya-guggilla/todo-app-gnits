@@ -1,4 +1,5 @@
 import { FILTERS } from "../filters";
+import ThemeToggle from "./ThemeToggle";
 
 const RADIUS = 34;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
@@ -22,7 +23,7 @@ function ProgressRing({ percent }) {
   );
 }
 
-function Sidebar({ todos, user, filter, onFilter, onClearDone, onLogout }) {
+function Sidebar({ todos, user, filter, onFilter, onClearDone, onLogout, theme, onToggleTheme }) {
   const doneCount = todos.filter(FILTERS.done.test).length;
   const percent = todos.length ? (doneCount / todos.length) * 100 : 0;
   const today = new Date().toLocaleDateString(undefined, {
@@ -57,6 +58,7 @@ function Sidebar({ todos, user, filter, onFilter, onClearDone, onLogout }) {
         <span title={user.email}>{user.email}</span>
         <button type="button" onClick={onLogout}>Sign out</button>
       </div>
+      <ThemeToggle theme={theme} onToggle={onToggleTheme} className="sidebar-theme-toggle" />
 
       <nav className="filters">
         {Object.entries(FILTERS).map(([key, { label, test }]) => (
